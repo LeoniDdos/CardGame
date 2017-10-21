@@ -10,9 +10,10 @@ void menu(RenderWindow & window) {
 	menuTexture1.loadFromFile("images/word_play.png");
 	menuTexture2.loadFromFile("images/word_rules.png");
 	menuTexture3.loadFromFile("images/word_quit.png");
-	//aboutTexture.loadFromFile("images/about.png");
 	menuBackground.loadFromFile("images/Green.png");
-	Sprite menu1(menuTexture1), menu2(menuTexture2), menu3(menuTexture3), menuBg(menuBackground);//, about(aboutTexture), menuBg(menuBackground);
+
+	Sprite menu1(menuTexture1), menu2(menuTexture2), menu3(menuTexture3), menuBg(menuBackground);
+
 	bool isMenu = 1;
 	int menuNum = 0;
 	menu1.setPosition(750, 280); //поправить зоны нажатий
@@ -39,7 +40,7 @@ void menu(RenderWindow & window) {
 			if (IntRect(750, 540, 300, 100).contains(Mouse::getPosition(window))) { menu3.setColor(Color::Red); menuNum = 3; }
 			if (Mouse::isButtonPressed(Mouse::Left))
 			{
-				if (menuNum == 1) isMenu = false;//если нажали первую кнопку, то выходим из меню 
+				if (menuNum == 1) isMenu = false;
 			//	if (menuNum == 2) { window.draw(about); window.display(); while (!Keyboard::isKeyPressed(Keyboard::Escape)); }
 				if (menuNum == 3) { window.close(); isMenu = false; }
 			}
@@ -103,16 +104,17 @@ int main()
 
 			if (event.type == Event::MouseButtonPressed)
 			{	
-				if (event.key.code == Mouse::Left) {
+				if (event.key.code == Mouse::Left) 
+				{
 					//window.draw(sBackground);
 					//window.draw(sBackOfCard);
 					//window.display();
 				}
 			}
-				else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
-				{
-					menu(window);
-				}
+			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+			{
+				menu(window);
+			}
 		}
 
 
@@ -122,6 +124,7 @@ int main()
 		//window.draw(sBackOfCard);
 		window.display();
 	}
+
 	system("pause");
 	return 0;
 }
