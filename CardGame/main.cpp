@@ -1,7 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <time.h>
-#include <set>
 #include "menu.h"
 #include <queue>
 #include <random>
@@ -18,6 +17,8 @@ int GetGroup(int Array[CountOfCards/4][4], int num)
 		for (int j = 0; j < 4; j++)
 			if (Array[i][j] == num)
 				return i;
+
+	return 0;
 }
 
 int main()
@@ -27,7 +28,8 @@ int main()
 	cout << "=========[LOG SYSTEM]=========" << endl;
 	cout << "[LOG]: Запуск программы.." << endl;
 
-	srand(time(0));
+	//srand(time(0));
+	srand((unsigned)time(NULL));
 
 	RenderWindow window(VideoMode(1920, 1080), "CardGame", Style::Fullscreen); //Посмотреть настройки max и min размера окна
 	
@@ -175,6 +177,7 @@ int main()
 		window.display();
 	}
 
+	cout << "Выход из программы" << endl;
 	system("pause");
 	return 0;
 }

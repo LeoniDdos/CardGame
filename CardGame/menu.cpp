@@ -5,6 +5,7 @@ using namespace sf;
 
 void menu(RenderWindow & window)
 {
+	//Добавить текстовые правила
 	cout << "[LOG]: Открытие меню" << endl;
 	Texture menuTexture1, menuTexture2, menuTexture3, aboutTexture, menuBackground;
 
