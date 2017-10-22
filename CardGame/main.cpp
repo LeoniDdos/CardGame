@@ -1,69 +1,35 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <time.h>
+#include <set>
+#include "menu.h"
+#include <queue>
+#include <random>
+#include <algorithm>
 
 using namespace std;
 using namespace sf;
 
-void menu(RenderWindow & window) {
-	Texture menuTexture1, menuTexture2, menuTexture3, aboutTexture, menuBackground;
-	menuTexture1.loadFromFile("images/word_play.png");
-	menuTexture2.loadFromFile("images/word_rules.png");
-	menuTexture3.loadFromFile("images/word_quit.png");
-	menuBackground.loadFromFile("images/Green.png");
+const int CountOfCards = 16;
 
-	Sprite menu1(menuTexture1), menu2(menuTexture2), menu3(menuTexture3), menuBg(menuBackground);
-
-	bool isMenu = 1;
-	int menuNum = 0;
-	menu1.setPosition(750, 280); //поправить зоны нажатий
-	menu2.setPosition(750, 410);
-	menu3.setPosition(750, 540);
-	menuBg.setPosition(0, 0);
-
-	while (isMenu)
-	{
-		menu1.setColor(Color::White);
-		menu2.setColor(Color::White);
-		menu3.setColor(Color::White);
-		menuNum = 0;
-		//window.clear(Color(100, 67, 0));
-
-		sf::Event event;
-
-		while (window.pollEvent(event))
-		{
-			if (event.type == sf::Event::Closed)
-				window.close();
-			if (IntRect(750, 280, 300, 100).contains(Mouse::getPosition(window))) { menu1.setColor(Color::Red); menuNum = 1; }
-			if (IntRect(750, 410, 300, 100).contains(Mouse::getPosition(window))) { menu2.setColor(Color::Red); menuNum = 2; }
-			if (IntRect(750, 540, 300, 100).contains(Mouse::getPosition(window))) { menu3.setColor(Color::Red); menuNum = 3; }
-			if (Mouse::isButtonPressed(Mouse::Left))
-			{
-				if (menuNum == 1) isMenu = false;
-			//	if (menuNum == 2) { window.draw(about); window.display(); while (!Keyboard::isKeyPressed(Keyboard::Escape)); }
-				if (menuNum == 3) { window.close(); isMenu = false; }
-			}
-			window.draw(menuBg);
-			window.draw(menu1);
-			window.draw(menu2);
-			window.draw(menu3);
-			window.display();
-		}
-	}
+int GetGroup(int Array[CountOfCards/4][4], int num)
+{
+	for (int i = 0; i < CountOfCards / 4; i++)
+		for (int j = 0; j < 4; j++)
+			if (Array[i][j] == num)
+				return i;
 }
 
 int main()
 {
 	setlocale(LC_ALL, "rus");
+	
 	cout << "=========[LOG SYSTEM]=========" << endl;
 	cout << "[LOG]: Запуск программы.." << endl;
 
-	int w = 32;
-
 	srand(time(0));
 
-	sf::RenderWindow window(sf::VideoMode(1920, 1080), "CardGame", Style::Fullscreen); //Посмотреть конструкторы на макс мин размеры
+	RenderWindow window(VideoMode(1920, 1080), "CardGame", Style::Fullscreen); //Посмотреть настройки max и min размера окна
 	
 	cout << "[LOG]: Запуск меню" << endl;
 	menu(window);
@@ -75,26 +41,66 @@ int main()
 	Texture tBackground;
 	Texture tBackOfCard;
 
-	tBackground.loadFromFile("images/background.png");
+	tBackground.loadFromFile("images/GameBack.png");
 	tBackOfCard.loadFromFile("images/BackOfCard.png");
 	
 	Sprite sBackground(tBackground);
 	Sprite sBackOfCard(tBackOfCard);
 
-	//sf::CircleShape shape(100.f);
-	//shape.setFillColor(sf::Color::Green);
+	//int ValCards[CountOfCards];
+	//int VisCards[CountOfCards];
 
-	cout << "[LOG]: Окончание подготовки" << endl;
+	string NameWinner;
+
+	vector<int> CardStorage;
+	vector<int> BufStorage;
+
+	for (int i = 0; i < CountOfCards; i++)
+		CardStorage.push_back(i);
+
+	int CardPrice[CountOfCards/4][4];
+	int k=0;
+	for (int i = 0; i < CountOfCards / 4;i++)
+		for (int j = 0; j < 4; j++)
+		{
+			CardPrice[i][j] = k;
+			k++;
+		}
+
+	queue<int> PlCards;
+	queue<int> BotCards;
+
+	random_device rd;
+	mt19937 g(rd());
+
+	std::shuffle(CardStorage.begin(), CardStorage.end(), g);
+
+	bool flag = 0;
+	for (const auto &i : CardStorage)
+	{
+		if (flag == 0)
+		{
+			PlCards.push(i);
+			flag = 1;
+			continue;
+		}
+		else if (flag == 1)
+		{
+			BotCards.push(i);
+			flag = 0;
+		}
+		else std::cout << "Error" << endl;
+	}
 
 	window.clear();
 	window.draw(sBackground);
 	window.display();
 
+	cout << "[LOG]: Окончание подготовки" << endl;
+
 	while (window.isOpen())
 	{
 		Vector2i pos = Mouse::getPosition(window);
-		//int x = pos.x / w;
-		//int y = pos.y / w;
 
 		sf::Event event;
 		while (window.pollEvent(event))
@@ -109,6 +115,52 @@ int main()
 					//window.draw(sBackground);
 					//window.draw(sBackOfCard);
 					//window.display();
+					if (!PlCards.empty() && !BotCards.empty()) 
+					{
+						cout << endl;
+						cout << "[LOG]: Карты = " << PlCards.front() << " " << BotCards.front() << endl;
+
+						BufStorage.push_back(PlCards.front());
+						BufStorage.push_back(BotCards.front());
+
+						if (GetGroup(CardPrice, PlCards.front()) > GetGroup(CardPrice, BotCards.front()))
+						{
+							cout << "[LOG]: Игрок выиграл раунд" << endl;
+							for (const auto &i : BufStorage)
+								PlCards.push(i);
+
+							BufStorage.clear();
+						}
+						else if (GetGroup(CardPrice, PlCards.front()) < GetGroup(CardPrice, BotCards.front()))
+						{
+							cout << "[LOG]: Бот выиграл раунд" << endl;
+							for (const auto &i : BufStorage)
+								BotCards.push(i);
+
+							BufStorage.clear();
+						}
+						else
+						{
+							cout << "[LOG]: Ничья в этом раунде" << endl;
+						}
+						PlCards.pop();
+						BotCards.pop();
+					}
+					else 
+					{
+						//Проверить на все одинаковые группы и вывести ничью
+						if (PlCards.size() > BotCards.size())
+							NameWinner = "Игрок";
+						else if (PlCards.size() < BotCards.size())
+							NameWinner = "Бот";
+						else if (PlCards.size() == BotCards.size())
+							NameWinner = "Ничья";
+						else
+							NameWinner = "Ошибка";
+
+						cout << "==============================" << endl;
+						cout << "[LOG]: Выиграл - " << NameWinner << endl;
+					}
 				}
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
@@ -116,11 +168,9 @@ int main()
 				menu(window);
 			}
 		}
-
-
-		//window.draw(shape);
+		window.clear();
 		window.draw(sBackground);
-		window.draw(sBackOfCard);
+
 		//window.draw(sBackOfCard);
 		window.display();
 	}
