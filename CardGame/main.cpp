@@ -33,6 +33,12 @@ int main()
 	//srand(time(0));
 	srand((unsigned)time(NULL));
 
+	Clock clock;
+
+//	float time = clock.getElapsedTime().asMicroseconds(); //дать прошедшее время в микросекундах
+//	clock.restart(); //перезагружает время
+//	time = time / 800; //скорость игры
+
 	RenderWindow window(VideoMode(1920, 1080), "CardGame", Style::Fullscreen); //Посмотреть настройки max и min размера окна
 	
 	cout << "[LOG]: Запуск меню" << endl;
@@ -61,9 +67,16 @@ int main()
 	tBackOfCard.loadFromFile("images/BackOfCard.png");
 	
 	Sprite sBackground(tBackground);
-	Sprite sBackOfCard(tBackOfCard);
+	//Sprite sBackOfCard(tBackOfCard);
 
-	sBackOfCard.setPosition(860, 750);
+	Sprite cardSprites[CountOfCards];
+	for (int i = 0; i < CountOfCards; i++) 
+	{
+		cardSprites[i].setTexture(tBackOfCard);
+		cardSprites[i].setPosition(1600, 410);
+	}
+
+	//sBackOfCard.setPosition(860, 750);
 
 	//int ValCards[CountOfCards];
 	//int VisCards[CountOfCards];
@@ -114,13 +127,36 @@ int main()
 	window.draw(sBackground);
 	window.draw(txtPlCards);
 	window.draw(txtBotCards);
+	//for (int i = 0; i < CountOfCards; i++) window.draw(cardSprites[i]);
 	window.display();
+
+	int plCount = 0;
+	int botCount = 0;
+
+	int startX = 1600;
+	int startY = 410;
+
+	int changeX;
+	int changeY;
+
+	int step;
+
+	int currentCard = CountOfCards - 1;
+
+	int whoCard = 0;
+
+	bool logic1;
+	bool logic2;
 
 	cout << "[LOG]: Окончание подготовки" << endl;
 
 	while (window.isOpen())
 	{
 		Vector2i pos = Mouse::getPosition(window);
+
+		float time = clock.getElapsedTime().asMicroseconds(); //дать прошедшее время в микросекундах
+		clock.restart(); //перезагружает время
+		time = time / 600; //скорость игры
 
 		sf::Event event;
 		while (window.pollEvent(event))
@@ -189,19 +225,65 @@ int main()
 			}
 		}
 
-		std::ostringstream playerCount;
-		playerCount << PlCards.size();
-		txtPlCards.setString("Ваших карт: " + playerCount.str());
+		if (botCount < CountOfCards / 2)
+		{
+			if (whoCard == 0) 
+			{
+				changeY = startY + 360;
+				changeX = startX - 740;
+				step = 5;
+				logic1 = cardSprites[currentCard].getPosition().y < changeY;
+				logic2 = cardSprites[currentCard].getPosition().x > changeX;
+			}
+			else if (whoCard == 1) 
+			{
+				changeY = startY - 360;
+				changeX = startX - 740;
+				step = -5;
+				logic1 = cardSprites[currentCard].getPosition().y > changeY;
+				logic2 = cardSprites[currentCard].getPosition().x > changeX;
+			}
 
-		std::ostringstream botCount;
-		botCount << BotCards.size();
-		txtBotCards.setString("Карт компьютера: " + botCount.str());
+			if (logic1)
+			{
+				cardSprites[currentCard].move(0, step);
+				cout << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
+			}
+			else if (logic2)
+			{
+				cardSprites[currentCard].move(-5, 0);
+				cout << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
+			}
+			else 
+			{
+				if (whoCard == 0)
+				{
+					plCount++;
+					whoCard = 1;
+				}
+				else if (whoCard == 1)
+				{
+					botCount++;
+					whoCard = 0;
+				}
+				currentCard--;
+			}
+		}
+
+		std::ostringstream streamPl;
+		streamPl << plCount;
+		txtPlCards.setString("Ваших карт: " + streamPl.str());
+
+		std::ostringstream streamBot;
+		streamBot << botCount;
+		txtBotCards.setString("Карт компьютера: " + streamBot.str());
 
 		window.clear();
 		window.draw(sBackground);
 		window.draw(txtPlCards);
 		window.draw(txtBotCards);
-		window.draw(sBackOfCard);
+		//window.draw(sBackOfCard);
+		for (int i = 0; i < CountOfCards; i++) window.draw(cardSprites[i]);
 
 		window.display();
 	}
