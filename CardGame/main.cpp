@@ -5,9 +5,11 @@
 #include <queue>
 #include <random>
 #include <algorithm>
+#include <sstream>
 
 using namespace std;
 using namespace sf;
+
 
 const int CountOfCards = 16;
 
@@ -40,6 +42,18 @@ int main()
 
 	window.setFramerateLimit(60); //нужно ли?
 	
+	Font font;
+	font.loadFromFile("CyrilicOld.ttf");
+	Text txtPlCards("", font, 40);
+	Text txtBotCards("", font, 40);
+	//text.setColor(Color::Red);
+	txtPlCards.setStyle(sf::Text::Bold);
+
+	txtPlCards.setString("Ваших карт: ");
+	txtPlCards.setPosition(490, 900);
+	txtBotCards.setString("Карт компьютера: ");
+	txtBotCards.setPosition(420, 100);
+
 	Texture tBackground;
 	Texture tBackOfCard;
 
@@ -48,6 +62,8 @@ int main()
 	
 	Sprite sBackground(tBackground);
 	Sprite sBackOfCard(tBackOfCard);
+
+	sBackOfCard.setPosition(860, 750);
 
 	//int ValCards[CountOfCards];
 	//int VisCards[CountOfCards];
@@ -61,7 +77,7 @@ int main()
 		CardStorage.push_back(i);
 
 	int CardPrice[CountOfCards/4][4];
-	int k=0;
+	int k = 0;
 	for (int i = 0; i < CountOfCards / 4;i++)
 		for (int j = 0; j < 4; j++)
 		{
@@ -96,6 +112,8 @@ int main()
 
 	window.clear();
 	window.draw(sBackground);
+	window.draw(txtPlCards);
+	window.draw(txtBotCards);
 	window.display();
 
 	cout << "[LOG]: Окончание подготовки" << endl;
@@ -170,10 +188,21 @@ int main()
 				menu(window);
 			}
 		}
+
+		std::ostringstream playerCount;
+		playerCount << PlCards.size();
+		txtPlCards.setString("Ваших карт: " + playerCount.str());
+
+		std::ostringstream botCount;
+		botCount << BotCards.size();
+		txtBotCards.setString("Карт компьютера: " + botCount.str());
+
 		window.clear();
 		window.draw(sBackground);
+		window.draw(txtPlCards);
+		window.draw(txtBotCards);
+		window.draw(sBackOfCard);
 
-		//window.draw(sBackOfCard);
 		window.display();
 	}
 
