@@ -156,7 +156,7 @@ int main()
 
 		float time = clock.getElapsedTime().asMicroseconds(); //дать прошедшее время в микросекундах
 		clock.restart(); //перезагружает время
-		time = time / 600; //скорость игры
+		time = time / 1000; //скорость игры
 
 		sf::Event event;
 		while (window.pollEvent(event))
@@ -166,7 +166,7 @@ int main()
 
 			if (event.type == Event::MouseButtonPressed)
 			{	
-				if (event.key.code == Mouse::Left) 
+				if (event.key.code == Mouse::Left && (botCount + plCount) == CountOfCards)
 				{
 					//window.draw(sBackground);
 					//window.draw(sBackOfCard);
@@ -218,6 +218,20 @@ int main()
 						cout << "[LOG]: Выиграл - " << NameWinner << endl;
 					}
 				}
+				else 
+				{
+					int flag = 0;
+
+					for (int i = 0; i < CountOfCards; i++) 
+					{
+						if (flag == 0) cardSprites[i].setPosition(856, 770);
+						if (flag == 1) cardSprites[i].setPosition(856, 50);
+
+						flag = flag == 0 ? 1 : 0;
+					}
+					plCount = CountOfCards / 2;
+					botCount = CountOfCards / 2;
+				}
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 			{
@@ -231,7 +245,7 @@ int main()
 			{
 				changeY = startY + 360;
 				changeX = startX - 740;
-				step = 5;
+				step = 8;
 				logic1 = cardSprites[currentCard].getPosition().y < changeY;
 				logic2 = cardSprites[currentCard].getPosition().x > changeX;
 			}
@@ -239,7 +253,7 @@ int main()
 			{
 				changeY = startY - 360;
 				changeX = startX - 740;
-				step = -5;
+				step = -8;
 				logic1 = cardSprites[currentCard].getPosition().y > changeY;
 				logic2 = cardSprites[currentCard].getPosition().x > changeX;
 			}
@@ -247,12 +261,12 @@ int main()
 			if (logic1)
 			{
 				cardSprites[currentCard].move(0, step);
-				cout << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
+				//cout << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
 			}
-			else if (logic2)
+			else if (cardSprites[currentCard].getPosition().x > changeX)
 			{
-				cardSprites[currentCard].move(-5, 0);
-				cout << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
+				cardSprites[currentCard].move(-8, 0);
+				//cout << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
 			}
 			else 
 			{
@@ -260,11 +274,13 @@ int main()
 				{
 					plCount++;
 					whoCard = 1;
+					//cout << "PLAYER:" << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
 				}
 				else if (whoCard == 1)
 				{
 					botCount++;
 					whoCard = 0;
+					//cout << "BOT:" << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
 				}
 				currentCard--;
 			}
