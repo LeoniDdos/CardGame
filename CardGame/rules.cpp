@@ -12,9 +12,13 @@ void rules(RenderWindow & window)
 
 	Font font;
 	font.loadFromFile("CyrilicOld.ttf");
-	Text txtRules("Правила игры - очень просты", font, 60);
+	Text txtHeadRules("Правила игры", font, 60);
+	txtHeadRules.setStyle(sf::Text::Bold);
+	txtHeadRules.setPosition(750, 200);
+
+	Text txtRules("Все кидают карты на стол и вскрывают их. \nУ кого оказалась карта старше - забирает все карты со стола. \nПобедитель будет определен, если у остальных не останется карт или \nпройдет достаточное количество раундов.", font, 40);
 	txtRules.setStyle(sf::Text::Bold);
-	txtRules.setPosition(100, 100);
+	txtRules.setPosition(300, 400);
 
 	Texture menuBackground;
 	menuBackground.loadFromFile("images/DarkWall.jpg");
@@ -37,8 +41,9 @@ void rules(RenderWindow & window)
 			}
 		}
 		window.clear();
-		window.draw(txtRules);
 		window.draw(menuBg);
+		window.draw(txtHeadRules);
+		window.draw(txtRules);
 		window.display();
 	}
 }
