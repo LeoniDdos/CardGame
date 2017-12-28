@@ -44,6 +44,11 @@ int CardPrice[CountOfCards / 4][4];
 
 Sprite cardSprites[CountOfCards];
 
+Font font;
+Text txtPlCards("", font, 40);
+Text txtBotCards("", font, 40);
+Text txtRound("", font, 40);
+
 int GetGroup(int Array[CountOfCards/4][4], int num)
 {
 	for (int i = 0; i < CountOfCards / 4; i++)
@@ -58,6 +63,8 @@ void battleCheck()
 {
 	if (!PlCards.empty() && !BotCards.empty())
 	{
+		String nameRound;
+
 		cout << endl;
 		cout << "[LOG]: Карты = " << PlCards.front() << " " << BotCards.front() << endl;
 
@@ -67,29 +74,42 @@ void battleCheck()
 		if (GetGroup(CardPrice, PlCards.front()) > GetGroup(CardPrice, BotCards.front()))
 		{
 			cout << "[LOG]: Игрок выиграл раунд" << endl;
+			nameRound = "Игрок";
+			PlCards.pop();
+			BotCards.pop();
 			for (const auto &i : BufStorage)
 				PlCards.push(i);
 
+			plCount += BufStorage.size()/2;
+			botCount -= BufStorage.size()/2;
+			cout << "PlCards: " << PlCards.size() << endl;
+			cout << "BotCards: " << BotCards.size() << endl;
 			BufStorage.clear();
-			plCount++;
-			botCount--;
 		}
 		else if (GetGroup(CardPrice, PlCards.front()) < GetGroup(CardPrice, BotCards.front()))
 		{
 			cout << "[LOG]: Бот выиграл раунд" << endl;
+			nameRound = "Бот";
+			PlCards.pop();
+			BotCards.pop();
 			for (const auto &i : BufStorage)
 				BotCards.push(i);
 
+			plCount -= BufStorage.size()/2;
+			botCount += BufStorage.size()/2;
+			cout << "PlCards: " << PlCards.size() << endl;
+			cout << "BotCards: " << BotCards.size() << endl;
 			BufStorage.clear();
-			plCount--;
-			botCount++;
 		}
 		else
 		{
 			cout << "[LOG]: Ничья в этом раунде" << endl;
+			nameRound = "Ничья";
+			PlCards.pop();
+			BotCards.pop();
 		}
-		PlCards.pop();
-		BotCards.pop();
+
+		txtRound.setString("Раунд: " + nameRound);
 	}
 	else
 	{
@@ -220,17 +240,18 @@ int main()
 
 	window.setFramerateLimit(60); //нужно ли?
 	
-	Font font;
 	font.loadFromFile("CyrilicOld.ttf");
-	Text txtPlCards("", font, 40);
-	Text txtBotCards("", font, 40);
 	//text.setColor(Color::Red);
 	txtPlCards.setStyle(sf::Text::Bold);
+	txtBotCards.setStyle(sf::Text::Bold);
+	txtRound.setStyle(sf::Text::Bold);
 
 	txtPlCards.setString("Ваших карт: ");
 	txtPlCards.setPosition(490, 900);
 	txtBotCards.setString("Карт компьютера: ");
 	txtBotCards.setPosition(420, 100);
+	txtRound.setString("");
+	txtRound.setPosition(250, 500);
 
 	Texture tBackground;
 	Texture tBackOfCard;
@@ -343,6 +364,7 @@ int main()
 		window.draw(sBackground);
 		window.draw(txtPlCards);
 		window.draw(txtBotCards);
+		window.draw(txtRound);
 		for (int i = 0; i < CountOfCards; i++) window.draw(cardSprites[i]);
 
 		window.display();
