@@ -1,4 +1,5 @@
 #include "menu.h"
+#include "rules.h"
 
 using namespace std;
 using namespace sf;
@@ -43,7 +44,7 @@ void menu(RenderWindow & window)
 			if (Mouse::isButtonPressed(Mouse::Left))
 			{
 				if (menuNum == 1) isMenu = false;
-				//	if (menuNum == 2) { window.draw(about); window.display(); while (!Keyboard::isKeyPressed(Keyboard::Escape)); }
+				if (menuNum == 2) { rules(window); while (!Keyboard::isKeyPressed(Keyboard::Escape)); }
 				if (menuNum == 3) { window.close(); isMenu = false; cout << "[LOG]: Запуск игры" << endl; }
 			}
 			window.draw(menuBg);

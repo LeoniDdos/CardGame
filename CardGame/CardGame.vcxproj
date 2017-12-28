@@ -118,9 +118,11 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="menu.cpp" />
+    <ClCompile Include="rules.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="menu.h" />
+    <ClInclude Include="rules.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -345,7 +345,6 @@ int main()
 	Sprite sBackground(tBackground);
 
 	firstStart();
-
 	window.clear();
 
 	while (window.isOpen())
