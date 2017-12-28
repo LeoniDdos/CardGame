@@ -10,6 +10,8 @@
 using namespace std;
 using namespace sf;
 
+RenderWindow window(VideoMode(1920, 1080), "CardGame", Style::Fullscreen); //Посмотреть настройки max и min размера окна
+
 //Количество карт
 const int CountOfCards = 16;
 
@@ -17,8 +19,7 @@ const int CountOfCards = 16;
 queue<int> PlCards;
 queue<int> BotCards;
 
-vector<int> CardStorage;
-vector<int> BufStorage; //Буфферное хранилище карт
+vector<int> BufStorage; //Буфферное хранилище карт раунда
 
 //Количество карт на руках
 int plCount = 0;
@@ -48,6 +49,13 @@ Font font;
 Text txtPlCards("", font, 40);
 Text txtBotCards("", font, 40);
 Text txtRound("", font, 40);
+Text txtBattle("", font, 40);
+
+bool flagRight = false;
+
+int roundsCount = 0;
+
+Texture tBackOfCard;
 
 int GetGroup(int Array[CountOfCards/4][4], int num)
 {
@@ -61,7 +69,7 @@ int GetGroup(int Array[CountOfCards/4][4], int num)
 
 void battleCheck()
 {
-	if (!PlCards.empty() && !BotCards.empty())
+	if (!PlCards.empty() && !BotCards.empty() && roundsCount <= 10)
 	{
 		String nameRound;
 
@@ -110,6 +118,7 @@ void battleCheck()
 		}
 
 		txtRound.setString("Раунд: " + nameRound);
+		roundsCount++;
 	}
 	else
 	{
@@ -127,6 +136,7 @@ void battleCheck()
 
 		cout << "==============================" << endl;
 		cout << "[LOG]: Выиграл - " << NameWinner << endl;
+		txtBattle.setString("Победитель: " + NameWinner);
 	}
 }
 
@@ -196,82 +206,65 @@ void putCardsOnTable()
 {		
 }
 
-void setRightPlace() 
+void resetGame() 
 {
-	queue<int> bufPl = PlCards;
-	queue<int> bufBot = BotCards;
+	while (!PlCards.empty())
+		PlCards.pop();
+	
+	while (!BotCards.empty())
+		BotCards.pop();
 
-	int who = 0;
+	BufStorage.clear();
 
-	for (int i = 0; i < CountOfCards; i++) 
-	{
-		if (who == 0) 
-		{
-			cardSprites[bufPl.front()].setPosition(856, 770);
-			bufPl.pop();
-		}
-		if (who == 1)
-		{
-			cardSprites[bufBot.front()].setPosition(856, 50);
-			bufBot.pop();
-		}
+	plCount = 0;
+	botCount = 0;
 
-		who = who == 0 ? 1 : 0;
-	}
+	changeX = 0;
+	changeY = 0;
+
+	step = 0;
+
+	currentCard = CountOfCards - 1;
+
+	whoCard = 0;
+
+	flagRight = false;
+
+	roundsCount = 0;
 }
 
-int main()
+void firstStart()
 {
-	setlocale(LC_ALL, "rus");
-	
-	cout << "=========[LOG SYSTEM]=========" << endl;
-	cout << "[LOG]: Запуск программы.." << endl;
-
-	srand((unsigned)time(NULL));
-
-	Clock clock;
-
-	RenderWindow window(VideoMode(1920, 1080), "CardGame", Style::Fullscreen); //Посмотреть настройки max и min размера окна
-	
-	cout << "[LOG]: Запуск меню" << endl;
-	menu(window);
-	
 	cout << "[LOG]: Запуск игры" << endl;
 
+	resetGame();
+
 	window.setFramerateLimit(60); //нужно ли?
-	
+
 	font.loadFromFile("CyrilicOld.ttf");
-	//text.setColor(Color::Red);
+	
 	txtPlCards.setStyle(sf::Text::Bold);
 	txtBotCards.setStyle(sf::Text::Bold);
 	txtRound.setStyle(sf::Text::Bold);
+	txtBattle.setStyle(sf::Text::Bold);
 
 	txtPlCards.setString("Ваших карт: ");
 	txtPlCards.setPosition(490, 900);
 	txtBotCards.setString("Карт компьютера: ");
 	txtBotCards.setPosition(420, 100);
+
 	txtRound.setString("");
 	txtRound.setPosition(250, 500);
+	txtBattle.setString("");
+	txtBattle.setPosition(800, 500);
 
-	Texture tBackground;
-	Texture tBackOfCard;
-
-	tBackground.loadFromFile("images/GameBack.png");
-	tBackOfCard.loadFromFile("images/BackOfCard.png");
-	
-	Sprite sBackground(tBackground);
-
-	for (int i = 0; i < CountOfCards; i++) 
-	{
-		cardSprites[i].setTexture(tBackOfCard);
-		cardSprites[i].setPosition(1600, 410);
-	}
+	vector<int> CardStorage;
 
 	for (int i = 0; i < CountOfCards; i++)
 		CardStorage.push_back(i);
 
 	int k = 0;
-	for (int i = 0; i < CountOfCards / 4;i++)
+	for (int i = 0; i < CountOfCards / 4; i++)
 		for (int j = 0; j < 4; j++)
 		{
 			CardPrice[i][j] = k;
@@ -300,15 +293,60 @@ int main()
 		else std::cout << "Error" << endl;
 	}
 
-	window.clear();
-	window.draw(sBackground);
-	window.draw(txtPlCards);
-	window.draw(txtBotCards);
-	window.display();
-
-	bool flagRight = false;
+	for (int i = 0; i < CountOfCards; i++)
+	{
+		cardSprites[i].setTexture(tBackOfCard);
+		cardSprites[i].setPosition(1600, 410);
+	}
 
 	cout << "[LOG]: Окончание подготовки" << endl;
+}
+
+void setRightPlace() 
+{
+	queue<int> bufPl = PlCards;
+	queue<int> bufBot = BotCards;
+
+	int who = 0;
+
+	for (int i = 0; i < CountOfCards; i++) 
+	{
+		if (who == 0) 
+		{
+			cardSprites[bufPl.front()].setPosition(856, 770);
+			bufPl.pop();
+		}
+		if (who == 1)
+		{
+			cardSprites[bufBot.front()].setPosition(856, 50);
+			bufBot.pop();
+		}
+
+		who = who == 0 ? 1 : 0;
+	}
+}
+
+int main()
+{
+	setlocale(LC_ALL, "rus");
+
+	cout << "=========[LOG SYSTEM]=========" << endl;
+	cout << "[LOG]: Запуск программы.." << endl;
+
+	srand((unsigned)time(NULL));
+
+	cout << "[LOG]: Запуск меню" << endl;
+	menu(window);
+
+	Clock clock;
+	Texture tBackground;
+	tBackground.loadFromFile("images/GameBack.png");
+	tBackOfCard.loadFromFile("images/BackOfCard.png");
+	Sprite sBackground(tBackground);
+
+	firstStart();
+
+	window.clear();
 
 	while (window.isOpen())
 	{
@@ -338,6 +376,7 @@ int main()
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 			{
 				menu(window);
+				firstStart();
 			}
 		}
 
@@ -365,6 +404,7 @@ int main()
 		window.draw(txtPlCards);
 		window.draw(txtBotCards);
 		window.draw(txtRound);
+		window.draw(txtBattle);
 		for (int i = 0; i < CountOfCards; i++) window.draw(cardSprites[i]);
 
 		window.display();
