@@ -13,13 +13,14 @@ using namespace sf;
 RenderWindow window(VideoMode(1920, 1080), "CardGame", Style::Fullscreen); //Посмотреть настройки max и min размера окна
 
 //Количество карт
-const int CountOfCards = 16;
+const int countOfCards = 16;
+const int countOfPlayers = 2;
 
 //Колоды
-queue<int> PlCards;
-queue<int> BotCards;
+queue<int> plCards;
+queue<int> botCards;
 
-vector<int> BufStorage; //Буфферное хранилище карт раунда
+vector<int> bufStorage; //Буфферное хранилище карт раунда
 
 //Количество карт на руках
 int plCount = 0;
@@ -34,16 +35,16 @@ int changeY;
 
 float step;
 
-int currentCard = CountOfCards - 1;
+int currentCard = countOfCards - 1;
 
 int whoCard = 0;
 
 bool logic1;
 //bool logic2;
 
-int CardPrice[CountOfCards / 4][4];
+int CardPrice[countOfCards / 4][4];
 
-Sprite cardSprites[CountOfCards];
+Sprite cardSprites[countOfCards];
 
 Font font;
 Text txtPlCards("", font, 40);
@@ -57,9 +58,9 @@ int roundsCount = 0;
 
 Texture tBackOfCard;
 
-int GetGroup(int Array[CountOfCards/4][4], int num)
+int GetGroup(int Array[countOfCards/4][4], int num)
 {
-	for (int i = 0; i < CountOfCards / 4; i++)
+	for (int i = 0; i < countOfCards / 4; i++)
 		for (int j = 0; j < 4; j++)
 			if (Array[i][j] == num)
 				return i;
@@ -67,54 +68,173 @@ int GetGroup(int Array[CountOfCards/4][4], int num)
 	return 0;
 }
 
+enum PutLocation 
+{
+	handLocation,
+	centerLocation
+};
+
+enum Side 
+{
+	upSide,
+	downSide,
+	leftSide,
+	rightSide
+};
+
+int flagSide = 0;
+
+bool expression;
+
+int stepX = 0;
+int stepY = 0;
+
+void firstGive()
+{
+	if (whoCard == 0)
+	{
+		plCount++;
+		whoCard = 1;
+	}
+	else if (whoCard == 1)
+	{
+		botCount++;
+		whoCard = 0;
+	}
+	currentCard--;
+}
+
+void moveCard(PutLocation putLocation, Side side, int endX, int endY)
+{
+	switch (side)
+	{
+	case upSide:
+		stepX = 0;
+		stepY = -8;
+		expression = cardSprites[currentCard].getPosition().y > endY;
+		break;
+	case downSide:
+		stepX = 0;
+		stepY = 8;
+		expression = cardSprites[currentCard].getPosition().y < endY;
+		break;
+	case leftSide:
+		stepX = -8;
+		stepY = 0;
+		expression = cardSprites[currentCard].getPosition().x > endX;
+		break;
+	case rightSide:
+		stepX = 8;
+		stepY = 0;
+		expression = cardSprites[currentCard].getPosition().x < endX;
+		break;
+	default:
+		break;
+	}
+
+	if (expression) 
+	{
+		cardSprites[currentCard].move(stepX, stepY);
+	}
+	else 
+	{
+		if (flagSide == 0) flagSide = 1;
+		else
+		{
+			if (putLocation == handLocation)
+			{
+				firstGive();
+			}
+			else if (putLocation == centerLocation) 
+			{
+
+			}
+			flagSide = 0;
+		}
+	}
+}
+
+void moveCardMajor(PutLocation putLocation, float endX, float endY, Side side1, Side side2)
+{
+	if (flagSide == 0) 
+	{
+		moveCard(putLocation, side1, endX, endY);
+	}
+	else if (flagSide == 1) 
+	{
+		moveCard(putLocation, side2, endX, endY);
+	}
+}
+
+void startAnim(PutLocation putLocation) 
+{
+	switch (putLocation)
+	{
+	case handLocation: 
+	{
+		if (whoCard == 0) moveCardMajor(putLocation, 860, 770, downSide, leftSide);
+		else moveCardMajor(putLocation, 860, 50, upSide, leftSide);
+		break;
+	}
+	case centerLocation:
+	{
+		if (whoCard == 0) moveCardMajor(putLocation, 880, 410, rightSide, upSide);
+		else moveCardMajor(putLocation, 840, 410, leftSide, downSide);
+		break;
+	}
+	default:
+		break;
+	}
+}
+
 void battleCheck()
 {
-	if (!PlCards.empty() && !BotCards.empty() && roundsCount <= 10)
+	if (!plCards.empty() && !botCards.empty() && roundsCount <= 10)
 	{
 		String nameRound;
 
 		cout << endl;
-		cout << "[LOG]: Карты = " << PlCards.front() << " " << BotCards.front() << endl;
+		cout << "[LOG]: Карты = " << plCards.front() << " " << botCards.front() << endl;
 
-		BufStorage.push_back(PlCards.front());
-		BufStorage.push_back(BotCards.front());
+		bufStorage.push_back(plCards.front());
+		bufStorage.push_back(botCards.front());
 
-		if (GetGroup(CardPrice, PlCards.front()) > GetGroup(CardPrice, BotCards.front()))
+		if (GetGroup(CardPrice, plCards.front()) > GetGroup(CardPrice, botCards.front()))
 		{
 			cout << "[LOG]: Игрок выиграл раунд" << endl;
 			nameRound = "Игрок";
-			PlCards.pop();
-			BotCards.pop();
-			for (const auto &i : BufStorage)
-				PlCards.push(i);
+			plCards.pop();
+			botCards.pop();
+			for (const auto &i : bufStorage)
+				plCards.push(i);
 
-			plCount += BufStorage.size()/2;
-			botCount -= BufStorage.size()/2;
-			cout << "PlCards: " << PlCards.size() << endl;
-			cout << "BotCards: " << BotCards.size() << endl;
-			BufStorage.clear();
+			plCount += bufStorage.size()/2;
+			botCount -= bufStorage.size()/2;
+			cout << "PlCards: " << plCards.size() << endl;
+			cout << "BotCards: " << botCards.size() << endl;
+			bufStorage.clear();
 		}
-		else if (GetGroup(CardPrice, PlCards.front()) < GetGroup(CardPrice, BotCards.front()))
+		else if (GetGroup(CardPrice, plCards.front()) < GetGroup(CardPrice, botCards.front()))
 		{
 			cout << "[LOG]: Бот выиграл раунд" << endl;
 			nameRound = "Бот";
-			PlCards.pop();
-			BotCards.pop();
-			for (const auto &i : BufStorage)
-				BotCards.push(i);
+			plCards.pop();
+			botCards.pop();
+			for (const auto &i : bufStorage)
+				botCards.push(i);
 
-			plCount -= BufStorage.size()/2;
-			botCount += BufStorage.size()/2;
-			cout << "PlCards: " << PlCards.size() << endl;
-			cout << "BotCards: " << BotCards.size() << endl;
-			BufStorage.clear();
+			plCount -= bufStorage.size()/2;
+			botCount += bufStorage.size()/2;
+			cout << "PlCards: " << plCards.size() << endl;
+			cout << "BotCards: " << botCards.size() << endl;
+			bufStorage.clear();
 		}
 		else
 		{
 			cout << "[LOG]: Ничья в этом раунде" << endl;
 			nameRound = "Ничья";
-			PlCards.pop();
-			BotCards.pop();
+			plCards.pop();
+			botCards.pop();
 		}
 
 		txtRound.setString("Раунд: " + nameRound);
@@ -125,11 +245,11 @@ void battleCheck()
 		string NameWinner;
 
 		//Проверить на все одинаковые группы и вывести ничью
-		if (PlCards.size() > BotCards.size())
+		if (plCards.size() > botCards.size())
 			NameWinner = "Игрок";
-		else if (PlCards.size() < BotCards.size())
+		else if (plCards.size() < botCards.size())
 			NameWinner = "Бот";
-		else if (PlCards.size() == BotCards.size())
+		else if (plCards.size() == botCards.size())
 			NameWinner = "Ничья";
 		else
 			NameWinner = "Ошибка";
@@ -144,77 +264,26 @@ void skipAnim()
 {
 	int flag = 0;
 
-	for (int i = 0; i < CountOfCards; i++)
+	for (int i = 0; i < countOfCards; i++)
 	{
 		if (flag == 0) cardSprites[i].setPosition(856, 770);
 		if (flag == 1) cardSprites[i].setPosition(856, 50);
 
 		flag = flag == 0 ? 1 : 0;
 	}
-	plCount = CountOfCards / 2;
-	botCount = CountOfCards / 2;
-}
-
-void firstAnim() 
-{
-	if (whoCard == 0)
-	{
-		changeY = startY + 360;
-		changeX = startX - 740;
-		step = 8;
-		logic1 = cardSprites[currentCard].getPosition().y < changeY;
-		//logic2 = cardSprites[currentCard].getPosition().x > changeX;
-	}
-	else if (whoCard == 1)
-	{
-		changeY = startY - 360;
-		changeX = startX - 740;
-		step = -8;
-		logic1 = cardSprites[currentCard].getPosition().y > changeY;
-		//logic2 = cardSprites[currentCard].getPosition().x > changeX;
-	}
-
-	if (logic1)
-	{
-		cardSprites[currentCard].move(0, step);
-		//cout << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
-	}
-	else if (cardSprites[currentCard].getPosition().x > changeX)
-	{
-		cardSprites[currentCard].move(-8, 0);
-		//cout << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
-	}
-	else
-	{
-		if (whoCard == 0)
-		{
-			plCount++;
-			whoCard = 1;
-			//cout << "PLAYER:" << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
-		}
-		else if (whoCard == 1)
-		{
-			botCount++;
-			whoCard = 0;
-			//cout << "BOT:" << cardSprites[currentCard].getPosition().x << " " << cardSprites[currentCard].getPosition().y << endl;
-		}
-		currentCard--;
-	}
-}
-
-void putCardsOnTable() 
-{		
+	plCount = countOfCards / 2;
+	botCount = countOfCards / 2;
 }
 
 void resetGame() 
 {
-	while (!PlCards.empty())
-		PlCards.pop();
+	while (!plCards.empty())
+		plCards.pop();
 	
-	while (!BotCards.empty())
-		BotCards.pop();
+	while (!botCards.empty())
+		botCards.pop();
 
-	BufStorage.clear();
+	bufStorage.clear();
 
 	plCount = 0;
 	botCount = 0;
@@ -224,7 +293,7 @@ void resetGame()
 
 	step = 0;
 
-	currentCard = CountOfCards - 1;
+	currentCard = countOfCards - 1;
 
 	whoCard = 0;
 
@@ -260,11 +329,11 @@ void firstStart()
 
 	vector<int> CardStorage;
 
-	for (int i = 0; i < CountOfCards; i++)
+	for (int i = 0; i < countOfCards; i++)
 		CardStorage.push_back(i);
 
 	int k = 0;
-	for (int i = 0; i < CountOfCards / 4; i++)
+	for (int i = 0; i < countOfCards / 4; i++)
 		for (int j = 0; j < 4; j++)
 		{
 			CardPrice[i][j] = k;
@@ -281,19 +350,19 @@ void firstStart()
 	{
 		if (flag == 0)
 		{
-			PlCards.push(i);
+			plCards.push(i);
 			flag = 1;
 			continue;
 		}
 		else if (flag == 1)
 		{
-			BotCards.push(i);
+			botCards.push(i);
 			flag = 0;
 		}
 		else std::cout << "Error" << endl;
 	}
 
-	for (int i = 0; i < CountOfCards; i++)
+	for (int i = 0; i < countOfCards; i++)
 	{
 		cardSprites[i].setTexture(tBackOfCard);
 		cardSprites[i].setPosition(1600, 410);
@@ -304,12 +373,12 @@ void firstStart()
 
 void setRightPlace() 
 {
-	queue<int> bufPl = PlCards;
-	queue<int> bufBot = BotCards;
+	queue<int> bufPl = plCards;
+	queue<int> bufBot = botCards;
 
 	int who = 0;
 
-	for (int i = 0; i < CountOfCards; i++) 
+	for (int i = 0; i < countOfCards; i++) 
 	{
 		if (who == 0) 
 		{
@@ -363,7 +432,7 @@ int main()
 
 			if (event.type == Event::MouseButtonPressed)
 			{	
-				if (event.key.code == Mouse::Left && (botCount + plCount) == CountOfCards)
+				if (event.key.code == Mouse::Left && (botCount + plCount) == countOfCards)
 				{
 					battleCheck();
 				}
@@ -379,14 +448,14 @@ int main()
 			}
 		}
 
-		if (!(botCount + plCount == CountOfCards))
+		if (!(botCount + plCount == countOfCards))
 		{
-			firstAnim();
+			startAnim(handLocation);
 			flagRight = true;
 		}
 		else if(flagRight == true) 
 		{
-			setRightPlace();
+			setRightPlace(); //Постоянно?
 			flagRight = false;
 		}
 
@@ -404,7 +473,7 @@ int main()
 		window.draw(txtBotCards);
 		window.draw(txtRound);
 		window.draw(txtBattle);
-		for (int i = 0; i < CountOfCards; i++) window.draw(cardSprites[i]);
+		for (int i = 0; i < countOfCards; i++) window.draw(cardSprites[i]);
 
 		window.display();
 	}
