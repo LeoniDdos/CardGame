@@ -12,37 +12,36 @@ using namespace sf;
 
 RenderWindow window(VideoMode(1920, 1080), "CardGame", Style::Fullscreen); //Посмотреть настройки max и min размера окна
 
-//Количество карт
-const int countOfCards = 16;
-const int countOfPlayers = 2;
+const int countOfCards = 16; //Количество карт
+const int countOfPlayers = 2; //Количество игроков
 
-//Колоды
+//Карты на руках
 queue<int> plCards;
 queue<int> botCards;
 
-vector<int> bufStorage; //Буфферное хранилище карт раунда
-
-//Количество карт на руках
-int plCount = 0;
-int botCount = 0;
+vector<int> cardStorage; //Хранилище колоды
+vector<int> roundStorage; //Хранилище карт раунда
 
 //Позиция первоначальной колоды
 int startX = 1600;
 int startY = 410;
 
-int changeX;
-int changeY;
-
-float step;
+//Шаги для передвижения карты
+int stepX = 0;
+int stepY = 0;
 
 int currentCard = countOfCards - 1;
 
 int whoCard = 0;
+int flagSide = 0;
 
-bool logic1;
-//bool logic2;
+bool isFight = false;
+bool expression;
+bool flagRight = false;
 
-int CardPrice[countOfCards / 4][4];
+int cardPrice[countOfCards / 4][4];
+
+int roundsCount = 0;
 
 Sprite cardSprites[countOfCards];
 
@@ -52,11 +51,21 @@ Text txtBotCards("", font, 40);
 Text txtRound("", font, 40);
 Text txtBattle("", font, 40);
 
-bool flagRight = false;
-
-int roundsCount = 0;
-
 Texture tBackOfCard;
+
+enum PutLocation
+{
+	handLocation,
+	centerLocation
+};
+
+enum Side
+{
+	upSide,
+	downSide,
+	leftSide,
+	rightSide
+};
 
 int GetGroup(int Array[countOfCards/4][4], int num)
 {
@@ -68,37 +77,18 @@ int GetGroup(int Array[countOfCards/4][4], int num)
 	return 0;
 }
 
-enum PutLocation 
-{
-	handLocation,
-	centerLocation
-};
-
-enum Side 
-{
-	upSide,
-	downSide,
-	leftSide,
-	rightSide
-};
-
-int flagSide = 0;
-
-bool expression;
-
-int stepX = 0;
-int stepY = 0;
-
 void firstGive()
 {
 	if (whoCard == 0)
 	{
-		plCount++;
+		plCards.push(cardStorage.front());
+		cardStorage.erase(cardStorage.begin());
 		whoCard = 1;
 	}
 	else if (whoCard == 1)
 	{
-		botCount++;
+		botCards.push(cardStorage.front());
+		cardStorage.erase(cardStorage.begin());
 		whoCard = 0;
 	}
 	currentCard--;
@@ -191,43 +181,44 @@ void battleCheck()
 {
 	if (!plCards.empty() && !botCards.empty() && roundsCount <= 10)
 	{
+		isFight = true;
 		String nameRound;
 
 		cout << endl;
 		cout << "[LOG]: Карты = " << plCards.front() << " " << botCards.front() << endl;
 
-		bufStorage.push_back(plCards.front());
-		bufStorage.push_back(botCards.front());
+		roundStorage.push_back(plCards.front());
+		roundStorage.push_back(botCards.front());
 
-		if (GetGroup(CardPrice, plCards.front()) > GetGroup(CardPrice, botCards.front()))
+		if (GetGroup(cardPrice, plCards.front()) > GetGroup(cardPrice, botCards.front()))
 		{
 			cout << "[LOG]: Игрок выиграл раунд" << endl;
 			nameRound = "Игрок";
 			plCards.pop();
 			botCards.pop();
-			for (const auto &i : bufStorage)
+			for (const auto &i : roundStorage)
 				plCards.push(i);
 
-			plCount += bufStorage.size()/2;
-			botCount -= bufStorage.size()/2;
 			cout << "PlCards: " << plCards.size() << endl;
 			cout << "BotCards: " << botCards.size() << endl;
-			bufStorage.clear();
+			roundStorage.clear();
+
+			isFight = false;
 		}
-		else if (GetGroup(CardPrice, plCards.front()) < GetGroup(CardPrice, botCards.front()))
+		else if (GetGroup(cardPrice, plCards.front()) < GetGroup(cardPrice, botCards.front()))
 		{
 			cout << "[LOG]: Бот выиграл раунд" << endl;
 			nameRound = "Бот";
 			plCards.pop();
 			botCards.pop();
-			for (const auto &i : bufStorage)
+			for (const auto &i : roundStorage)
 				botCards.push(i);
 
-			plCount -= bufStorage.size()/2;
-			botCount += bufStorage.size()/2;
 			cout << "PlCards: " << plCards.size() << endl;
 			cout << "BotCards: " << botCards.size() << endl;
-			bufStorage.clear();
+			roundStorage.clear();
+
+			isFight = false;
 		}
 		else
 		{
@@ -271,8 +262,22 @@ void skipAnim()
 
 		flag = flag == 0 ? 1 : 0;
 	}
-	plCount = countOfCards / 2;
-	botCount = countOfCards / 2;
+
+	for (const auto &i : cardStorage)
+	{
+		if (whoCard == 0)
+		{
+			plCards.push(i);
+			whoCard = 1;
+			continue;
+		}
+		else if (whoCard == 1)
+		{
+			botCards.push(i);
+			whoCard = 0;
+		}
+		else std::cout << "Error" << endl;
+	}
 }
 
 void resetGame() 
@@ -283,15 +288,11 @@ void resetGame()
 	while (!botCards.empty())
 		botCards.pop();
 
-	bufStorage.clear();
+	roundStorage.clear();
 
-	plCount = 0;
-	botCount = 0;
+	cardStorage.clear();
 
-	changeX = 0;
-	changeY = 0;
-
-	step = 0;
+	isFight = false;
 
 	currentCard = countOfCards - 1;
 
@@ -327,40 +328,25 @@ void firstStart()
 	txtBattle.setString("");
 	txtBattle.setPosition(800, 500);
 
-	vector<int> CardStorage;
-
 	for (int i = 0; i < countOfCards; i++)
-		CardStorage.push_back(i);
+		cardStorage.push_back(i);
 
 	int k = 0;
 	for (int i = 0; i < countOfCards / 4; i++)
 		for (int j = 0; j < 4; j++)
 		{
-			CardPrice[i][j] = k;
+			cardPrice[i][j] = k;
 			k++;
 		}
 
 	random_device rd;
 	mt19937 g(rd());
 
-	std::shuffle(CardStorage.begin(), CardStorage.end(), g);
+	std::shuffle(cardStorage.begin(), cardStorage.end(), g);
 
-	bool flag = 0;
-	for (const auto &i : CardStorage)
-	{
-		if (flag == 0)
-		{
-			plCards.push(i);
-			flag = 1;
-			continue;
-		}
-		else if (flag == 1)
-		{
-			botCards.push(i);
-			flag = 0;
-		}
-		else std::cout << "Error" << endl;
-	}
+	//ЗДЕСЬ ДОЛЖА БЫТЬ СОРТИРОВКА ПО CARTSTORAGE
+
+	for (const auto &i : cardStorage) cout << "Card Storage: " << i << endl;
 
 	for (int i = 0; i < countOfCards; i++)
 	{
@@ -432,7 +418,7 @@ int main()
 
 			if (event.type == Event::MouseButtonPressed)
 			{	
-				if (event.key.code == Mouse::Left && (botCount + plCount) == countOfCards)
+				if (event.key.code == Mouse::Left && (plCards.size() + botCards.size()) == countOfCards || isFight)
 				{
 					battleCheck();
 				}
@@ -448,7 +434,7 @@ int main()
 			}
 		}
 
-		if (!(botCount + plCount == countOfCards))
+		if (!(plCards.size() + botCards.size() == countOfCards) && !isFight)
 		{
 			startAnim(handLocation);
 			flagRight = true;
@@ -460,11 +446,11 @@ int main()
 		}
 
 		std::ostringstream streamPl;
-		streamPl << plCount;
+		streamPl << plCards.size();
 		txtPlCards.setString("Ваших карт: " + streamPl.str());
 
 		std::ostringstream streamBot;
-		streamBot << botCount;
+		streamBot << botCards.size();
 		txtBotCards.setString("Карт компьютера: " + streamBot.str());
 
 		window.clear();
