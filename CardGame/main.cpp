@@ -30,14 +30,13 @@ int startY = 410;
 int stepX = 0;
 int stepY = 0;
 
-int currentCard = countOfCards - 1;
+int curCard; //Текущая карта
 
 int whoCard = 0;
 int flagSide = 0;
 
 bool isFight = false;
 bool expression;
-bool flagRight = false;
 
 int cardPrice[countOfCards / 4][4];
 
@@ -81,42 +80,43 @@ void firstGive()
 {
 	if (whoCard == 0)
 	{
-		plCards.push(cardStorage.front());
-		cardStorage.erase(cardStorage.begin());
+		plCards.push(curCard);
+		cardStorage.pop_back();
 		whoCard = 1;
 	}
 	else if (whoCard == 1)
 	{
-		botCards.push(cardStorage.front());
-		cardStorage.erase(cardStorage.begin());
+		botCards.push(curCard);
+		cardStorage.pop_back();
 		whoCard = 0;
 	}
-	currentCard--;
 }
 
 void moveCard(PutLocation putLocation, Side side, int endX, int endY)
 {
+	curCard = cardStorage.back();
+
 	switch (side)
 	{
 	case upSide:
 		stepX = 0;
 		stepY = -8;
-		expression = cardSprites[currentCard].getPosition().y > endY;
+		expression = cardSprites[curCard].getPosition().y > endY;
 		break;
 	case downSide:
 		stepX = 0;
 		stepY = 8;
-		expression = cardSprites[currentCard].getPosition().y < endY;
+		expression = cardSprites[curCard].getPosition().y < endY;
 		break;
 	case leftSide:
 		stepX = -8;
 		stepY = 0;
-		expression = cardSprites[currentCard].getPosition().x > endX;
+		expression = cardSprites[curCard].getPosition().x > endX;
 		break;
 	case rightSide:
 		stepX = 8;
 		stepY = 0;
-		expression = cardSprites[currentCard].getPosition().x < endX;
+		expression = cardSprites[curCard].getPosition().x < endX;
 		break;
 	default:
 		break;
@@ -124,7 +124,7 @@ void moveCard(PutLocation putLocation, Side side, int endX, int endY)
 
 	if (expression) 
 	{
-		cardSprites[currentCard].move(stepX, stepY);
+		cardSprites[curCard].move(stepX, stepY);
 	}
 	else 
 	{
@@ -134,6 +134,7 @@ void moveCard(PutLocation putLocation, Side side, int endX, int endY)
 			if (putLocation == handLocation)
 			{
 				firstGive();
+				cout << curCard << endl;
 			}
 			else if (putLocation == centerLocation) 
 			{
@@ -289,16 +290,12 @@ void resetGame()
 		botCards.pop();
 
 	roundStorage.clear();
-
 	cardStorage.clear();
 
 	isFight = false;
 
-	currentCard = countOfCards - 1;
-
+	flagSide = 0;
 	whoCard = 0;
-
-	flagRight = false;
 
 	roundsCount = 0;
 }
@@ -344,12 +341,10 @@ void firstStart()
 
 	std::shuffle(cardStorage.begin(), cardStorage.end(), g);
 
-	//ЗДЕСЬ ДОЛЖА БЫТЬ СОРТИРОВКА ПО CARTSTORAGE
-
-	for (const auto &i : cardStorage) cout << "Card Storage: " << i << endl;
-
-	for (int i = 0; i < countOfCards; i++)
+	for (const auto &i : cardStorage) 
 	{
+		cout << "Card Storage: " << i << endl;
+
 		cardSprites[i].setTexture(tBackOfCard);
 		cardSprites[i].setPosition(1600, 410);
 	}
@@ -357,27 +352,29 @@ void firstStart()
 	cout << "[LOG]: Окончание подготовки" << endl;
 }
 
-void setRightPlace() 
+void displayCards() 
 {
 	queue<int> bufPl = plCards;
 	queue<int> bufBot = botCards;
 
-	int who = 0;
-
-	for (int i = 0; i < countOfCards; i++) 
+	//Отрисовка карт игрока
+	while (!bufPl.empty())
 	{
-		if (who == 0) 
-		{
-			cardSprites[bufPl.front()].setPosition(856, 770);
-			bufPl.pop();
-		}
-		if (who == 1)
-		{
-			cardSprites[bufBot.front()].setPosition(856, 50);
-			bufBot.pop();
-		}
+		window.draw(cardSprites[bufPl.front()]);
+		bufPl.pop();
+	}
 
-		who = who == 0 ? 1 : 0;
+	//Отрисовка карт бота
+	while (!bufBot.empty())
+	{
+		window.draw(cardSprites[bufBot.front()]);
+		bufBot.pop();
+	}
+
+	//Отрисовка колоды
+	for (const auto &i : cardStorage) 
+	{
+		window.draw(cardSprites[i]);
 	}
 }
 
@@ -437,12 +434,6 @@ int main()
 		if (!(plCards.size() + botCards.size() == countOfCards) && !isFight)
 		{
 			startAnim(handLocation);
-			flagRight = true;
-		}
-		else if(flagRight == true) 
-		{
-			setRightPlace(); //Постоянно?
-			flagRight = false;
 		}
 
 		std::ostringstream streamPl;
@@ -454,12 +445,14 @@ int main()
 		txtBotCards.setString("Карт компьютера: " + streamBot.str());
 
 		window.clear();
+
 		window.draw(sBackground);
 		window.draw(txtPlCards);
 		window.draw(txtBotCards);
 		window.draw(txtRound);
 		window.draw(txtBattle);
-		for (int i = 0; i < countOfCards; i++) window.draw(cardSprites[i]);
+		
+		displayCards();
 
 		window.display();
 	}
