@@ -50,12 +50,18 @@ Text txtBotCards("", font, 40);
 Text txtRound("", font, 40);
 Text txtBattle("", font, 40);
 
+Texture tBackground;
 Texture tBackOfCard;
+
+Texture txtrBotCard;
+Texture txtrPlCard;
+
+Sprite sBackground;
 
 enum PutLocation
 {
-	handLocation,
-	centerLocation
+	handLoc,
+	tableLoc
 };
 
 enum Side
@@ -66,7 +72,7 @@ enum Side
 	rightSide
 };
 
-int GetGroup(int Array[countOfCards/4][4], int num)
+int getGroup(int Array[countOfCards/4][4], int num)
 {
 	for (int i = 0; i < countOfCards / 4; i++)
 		for (int j = 0; j < 4; j++)
@@ -74,6 +80,55 @@ int GetGroup(int Array[countOfCards/4][4], int num)
 				return i;
 
 	return 0;
+}
+
+void displayCards()
+{
+	queue<int> bufPl = plCards;
+	queue<int> bufBot = botCards;
+
+	//Отрисовка карт игрока
+	while (!bufPl.empty())
+	{
+		window.draw(cardSprites[bufPl.front()]);
+		bufPl.pop();
+	}
+
+	//Отрисовка карт бота
+	while (!bufBot.empty())
+	{
+		window.draw(cardSprites[bufBot.front()]);
+		bufBot.pop();
+	}
+
+	//Отрисовка колоды
+	for (const auto &i : cardStorage)
+	{
+		window.draw(cardSprites[i]);
+	}
+}
+
+void drawAndDisplay() {
+	std::ostringstream streamPl;
+	streamPl << plCards.size();
+	txtPlCards.setString("Ваших карт: " + streamPl.str());
+
+	std::ostringstream streamBot;
+	streamBot << botCards.size();
+	txtBotCards.setString("Карт компьютера: " + streamBot.str());
+
+	window.clear();
+
+	window.draw(sBackground);
+
+	displayCards();
+
+	window.draw(txtPlCards);
+	window.draw(txtBotCards);
+	if (!isFight) window.draw(txtRound);
+	window.draw(txtBattle);
+
+	window.display();
 }
 
 void putInHand()
@@ -86,7 +141,6 @@ void putInHand()
 			{
 				plCards.push(i);
 				whoCard = 1;
-				//continue;
 			}
 			else if (whoCard == 1)
 			{
@@ -127,11 +181,39 @@ void firstGive()
 	}
 }
 
+template <typename T>
+std::string NumberToString(T Number)
+{
+	std::ostringstream ss;
+	ss << Number;
+	return ss.str();
+}
+
+void getTextures() 
+{
+	txtrPlCard.loadFromFile("images/" + NumberToString(plCards.front()) + ".png");
+	txtrBotCard.loadFromFile("images/" + NumberToString(botCards.front()) + ".png");
+
+	cardSprites[plCards.front()].setTexture(txtrPlCard);
+	cardSprites[botCards.front()].setTexture(txtrBotCard);
+}
+
+void returnBackOfCards() 
+{
+	for (int i = 0; i < countOfCards; i++) 
+	{
+		cardSprites[i].setTexture(tBackOfCard);
+	}
+}
+
 void battleCheck()
 {
 	if (!plCards.empty() && !botCards.empty() && roundsCount <= 10)
 	{
 		String nameRound;
+
+		getTextures();
+		drawAndDisplay();
 
 		cout << endl;
 		cout << "[LOG]: Карты = " << plCards.front() << " " << botCards.front() << endl;
@@ -139,7 +221,10 @@ void battleCheck()
 		roundStorage.push_back(plCards.front());
 		roundStorage.push_back(botCards.front());
 
-		if (GetGroup(cardPrice, plCards.front()) > GetGroup(cardPrice, botCards.front()))
+		//cardSprites[plCards.front()].setTextureRect(IntRect(20, 320, 206, 306));
+		//cardSprites[botCards.front()].setTextureRect(IntRect(20, 320, 206, 306));
+
+		if (getGroup(cardPrice, plCards.front()) > getGroup(cardPrice, botCards.front()))
 		{
 			cout << "[LOG]: Игрок выиграл раунд" << endl;
 			nameRound = "Игрок";
@@ -152,12 +237,14 @@ void battleCheck()
 			cout << "BotCards: " << botCards.size() << endl;
 			roundStorage.clear();
 
-			sleep(sf::milliseconds(1000));
+			sleep(sf::milliseconds(1500));
 
 			putInHand();
 			isFight = false;
+
+			returnBackOfCards();
 		}
-		else if (GetGroup(cardPrice, plCards.front()) < GetGroup(cardPrice, botCards.front()))
+		else if (getGroup(cardPrice, plCards.front()) < getGroup(cardPrice, botCards.front()))
 		{
 			cout << "[LOG]: Бот выиграл раунд" << endl;
 			nameRound = "Бот";
@@ -170,10 +257,12 @@ void battleCheck()
 			cout << "BotCards: " << botCards.size() << endl;
 			roundStorage.clear();
 
-			sleep(sf::milliseconds(1000));
+			sleep(sf::milliseconds(1500));
 
 			putInHand();
 			isFight = false;
+
+			returnBackOfCards();
 		}
 		else
 		{
@@ -235,7 +324,7 @@ void moveCard(PutLocation putLocation, int cardNum, Side side, int endX, int end
 		break;
 	}
 
-	if (expression) 
+	if (expression && roundsCount <=10) 
 	{
 		cardSprites[curCard].move(stepX, stepY);
 	}
@@ -244,12 +333,12 @@ void moveCard(PutLocation putLocation, int cardNum, Side side, int endX, int end
 		if (flagSide == 0) flagSide = 1;
 		else
 		{
-			if (putLocation == handLocation)
+			if (putLocation == handLoc)
 			{
 				firstGive();
 				cout << curCard << endl;
 			}
-			else if (putLocation == centerLocation) 
+			else if (putLocation == tableLoc) 
 			{
 				if (whoCard == 1) battleCheck();
 				whoCard = whoCard == 0 ? 1 : 0;
@@ -275,13 +364,13 @@ void startAnim(PutLocation putLocation)
 {
 	switch (putLocation)
 	{
-	case handLocation: 
+	case handLoc: 
 	{
 		if (whoCard == 0) moveCardMajor(putLocation, cardStorage.back(), 840, 770, downSide, leftSide);
 		else moveCardMajor(putLocation, cardStorage.back(), 860, 50, upSide, leftSide);
 		break;
 	}
-	case centerLocation:
+	case tableLoc:
 	{
 		if (whoCard == 0) moveCardMajor(putLocation, plCards.front(), 980, 410, rightSide, upSide);
 		else moveCardMajor(putLocation, botCards.front(), 760, 410, leftSide, downSide);
@@ -363,32 +452,6 @@ void firstStart()
 	cout << "[LOG]: Окончание подготовки" << endl;
 }
 
-void displayCards() 
-{
-	queue<int> bufPl = plCards;
-	queue<int> bufBot = botCards;
-
-	//Отрисовка карт игрока
-	while (!bufPl.empty())
-	{
-		window.draw(cardSprites[bufPl.front()]);
-		bufPl.pop();
-	}
-
-	//Отрисовка карт бота
-	while (!bufBot.empty())
-	{
-		window.draw(cardSprites[bufBot.front()]);
-		bufBot.pop();
-	}
-
-	//Отрисовка колоды
-	for (const auto &i : cardStorage) 
-	{
-		window.draw(cardSprites[i]);
-	}
-}
-
 int main()
 {
 	setlocale(LC_ALL, "rus");
@@ -402,12 +465,14 @@ int main()
 	menu(window);
 
 	Clock clock;
-	Texture tBackground;
+
 	tBackground.loadFromFile("images/GameBack.png");
+	sBackground.setPosition(0, 0);
+	sBackground.setTexture(tBackground);
 	tBackOfCard.loadFromFile("images/BackOfCard.png");
-	Sprite sBackground(tBackground);
 
 	firstStart();
+
 	window.clear();
 
 	while (window.isOpen())
@@ -444,34 +509,15 @@ int main()
 
 		if (!(plCards.size() + botCards.size() == countOfCards) && !isFight)
 		{
-			startAnim(handLocation);
+			startAnim(handLoc);
 		}
 
 		if (isFight)
 		{
-			startAnim(centerLocation);
+			startAnim(tableLoc);
 		}
 
-		std::ostringstream streamPl;
-		streamPl << plCards.size();
-		txtPlCards.setString("Ваших карт: " + streamPl.str());
-
-		std::ostringstream streamBot;
-		streamBot << botCards.size();
-		txtBotCards.setString("Карт компьютера: " + streamBot.str());
-
-		window.clear();
-
-		window.draw(sBackground);
-
-		displayCards();
-
-		window.draw(txtPlCards);
-		window.draw(txtBotCards);
-		if (!isFight) window.draw(txtRound);
-		window.draw(txtBattle);
-
-		window.display();
+		drawAndDisplay();
 	}
 
 	cout << "Выход из программы" << endl;
