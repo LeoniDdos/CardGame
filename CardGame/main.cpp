@@ -28,8 +28,8 @@ int startX = 1600;
 int startY = 410;
 
 //Шаги для передвижения карты
-int stepX = 0;
-int stepY = 0;
+float stepX = 0;
+float stepY = 0;
 
 int curCard; //Текущая карта
 
@@ -48,8 +48,9 @@ Sprite cardSprites[COUNT_OF_CARDS];
 Font font;
 Text txtPlCards("", font, 40);
 Text txtBotCards("", font, 40);
-Text txtRound("", font, 40);
-Text txtBattle("", font, 40);
+Text txtRoundInfo("", font, 40);
+Text txtBattleInfo("", font, 40);
+Text txtRounds("", font, 40);
 
 Texture tBackground;
 Texture tBackOfCard;
@@ -77,21 +78,21 @@ enum Side
 	rightSide
 };
 
-int getGroup(int Array[COUNT_OF_CARDS / 4][4], int num)
+int getGroup(int numArray[COUNT_OF_CARDS / 4][4], int num)
 {
 	for (int i = 0; i < COUNT_OF_CARDS / 4; i++)
 		for (int j = 0; j < 4; j++)
-			if (Array[i][j] == num)
+			if (numArray[i][j] == num)
 				return i;
 
 	return 0;
 }
 
 template <typename T>
-std::string NumberToString(T Number)
+std::string numberToString(T num)
 {
 	std::ostringstream ss;
-	ss << Number;
+	ss << num;
 	return ss.str();
 }
 
@@ -123,8 +124,9 @@ void displayCards()
 
 void drawAndDisplay() 
 {
-	txtPlCards.setString("Ваших карт: " + NumberToString(plCards.size()));
-	txtBotCards.setString("Карт компьютера: " + NumberToString(botCards.size()));
+	txtPlCards.setString("Ваших карт: " + numberToString(plCards.size()));
+	txtBotCards.setString("Карт компьютера: " + numberToString(botCards.size()));
+	txtRounds.setString("Раунд: " + numberToString(roundsCount) + "/" + numberToString(COUNT_OF_ROUNDS));
 
 	window.clear();
 
@@ -134,13 +136,17 @@ void drawAndDisplay()
 
 	window.draw(txtPlCards);
 	window.draw(txtBotCards);
+	if ((plCards.size() + botCards.size()) == COUNT_OF_CARDS || isFight)
+	{
+		window.draw(txtRounds);
+	}
 	if (!isFight) 
 	{ 
-		window.draw(txtRound); 
+		window.draw(txtRoundInfo);
 	}
-	window.draw(txtBattle);
+	window.draw(txtBattleInfo);
 
-	if ((plCards.size() + botCards.size()) == COUNT_OF_CARDS && !isFight)
+	if ((plCards.size() + botCards.size()) == COUNT_OF_CARDS && !isFight && roundsCount != COUNT_OF_ROUNDS)
 	{
 		window.draw(sMove);
 	}
@@ -200,8 +206,8 @@ void firstGive()
 
 void getTextures() 
 {
-	txtrPlCard.loadFromFile("images/" + NumberToString(plCards.front()) + ".png");
-	txtrBotCard.loadFromFile("images/" + NumberToString(botCards.front()) + ".png");
+	txtrPlCard.loadFromFile("images/" + numberToString(plCards.front()) + ".png");
+	txtrBotCard.loadFromFile("images/" + numberToString(botCards.front()) + ".png");
 
 	cardSprites[plCards.front()].setTexture(txtrPlCard);
 	cardSprites[botCards.front()].setTexture(txtrBotCard);
@@ -217,7 +223,7 @@ void returnBackOfCards()
 
 void battleCheck()
 {
-	if (!plCards.empty() && !botCards.empty() && roundsCount <= COUNT_OF_ROUNDS)
+	if (!plCards.empty() && !botCards.empty() && roundsCount < COUNT_OF_ROUNDS)
 	{
 		String nameRound;
 
@@ -278,11 +284,11 @@ void battleCheck()
 			botCards.pop();
 		}
 
-		txtRound.setString("Раунд: " + nameRound);
+		txtRoundInfo.setString("Раунд: " + nameRound);
 		roundsCount++;
 	}
 	
-	if (plCards.empty() || botCards.empty() || roundsCount > COUNT_OF_ROUNDS)
+	if (plCards.empty() || botCards.empty() || roundsCount >= COUNT_OF_ROUNDS)
 	{
 		isFight = false;
 
@@ -297,11 +303,11 @@ void battleCheck()
 
 		cout << "==============================" << endl;
 		cout << "[LOG]: Выиграл - " << winnerName << endl;
-		txtBattle.setString("Победитель: " + winnerName);
+		txtBattleInfo.setString("Победитель: " + winnerName);
 	}
 }
 
-void moveCard(PutLocation putLocation, int cardNum, Side side, int endX, int endY)
+void moveCard(PutLocation putLocation, int cardNum, Side side, float endX, float endY)
 {
 	curCard = cardNum;
 
@@ -331,7 +337,7 @@ void moveCard(PutLocation putLocation, int cardNum, Side side, int endX, int end
 		break;
 	}
 
-	if (expression && roundsCount <= COUNT_OF_ROUNDS)
+	if (expression && roundsCount < COUNT_OF_ROUNDS)
 	{
 		cardSprites[curCard].move(stepX, stepY);
 	}
@@ -419,18 +425,21 @@ void firstStart()
 	
 	txtPlCards.setStyle(sf::Text::Bold);
 	txtBotCards.setStyle(sf::Text::Bold);
-	txtRound.setStyle(sf::Text::Bold);
-	txtBattle.setStyle(sf::Text::Bold);
+	txtRoundInfo.setStyle(sf::Text::Bold);
+	txtBattleInfo.setStyle(sf::Text::Bold);
+	txtRounds.setStyle(sf::Text::Bold);
 
 	txtPlCards.setString("Ваших карт: ");
 	txtPlCards.setPosition(490, 900);
 	txtBotCards.setString("Карт компьютера: ");
 	txtBotCards.setPosition(420, 100);
 
-	txtRound.setString("");
-	txtRound.setPosition(250, 500);
-	txtBattle.setString("");
-	txtBattle.setPosition(800, 500);
+	txtRoundInfo.setString("");
+	txtRoundInfo.setPosition(250, 500);
+	txtBattleInfo.setString("");
+	txtBattleInfo.setPosition(800, 500);
+
+	txtRounds.setPosition(1600, 70);
 
 	for (int i = 0; i < COUNT_OF_CARDS; i++)
 		cardStorage.push_back(i);
@@ -490,15 +499,18 @@ int main()
 	{
 		Vector2i pos = Mouse::getPosition(window);
 
-		float time = float(clock.getElapsedTime().asMicroseconds()); //дать прошедшее время в микросекундах
-		clock.restart(); //перезагружает время
-		time = time / 1000; //скорость игры
+		float time = float(clock.getElapsedTime().asMicroseconds());
+		clock.restart();
+		time = time / 1000;
 
 		sMove.setColor(Color::White);
 
 		sf::Event event;
 		
-		if (IntRect(1400, 510, 190, 85).contains(Mouse::getPosition(window))) { sMove.setColor(sf::Color(169, 169, 169, 255)); }
+		if (IntRect(1400, 510, 190, 85).contains(Mouse::getPosition(window))) 
+		{ 
+			sMove.setColor(sf::Color(169, 169, 169, 255)); 
+		}
 		
 		while (window.pollEvent(event))
 		{
