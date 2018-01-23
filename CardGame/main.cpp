@@ -349,7 +349,7 @@ void moveCard(PutLocation putLocation, int cardNum, Side side, float endX, float
 			if (putLocation == handLoc)
 			{
 				firstGive();
-				cout << curCard << endl;
+				//cout << curCard << endl;
 			}
 			else if (putLocation == tableLoc) 
 			{
@@ -419,7 +419,7 @@ void firstStart()
 
 	resetGame();
 
-	window.setFramerateLimit(60); //нужно ли?
+	window.setFramerateLimit(60);
 
 	font.loadFromFile("CyrilicOld.ttf");
 	
@@ -459,8 +459,7 @@ void firstStart()
 
 	for (const auto &i : cardStorage) 
 	{
-		cout << "Card Storage: " << i << endl;
-
+		//cout << "Card Storage: " << i << endl;
 		cardSprites[i].setTexture(tBackOfCard);
 		cardSprites[i].setPosition(1600, 410);
 	}

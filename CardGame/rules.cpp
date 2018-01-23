@@ -5,7 +5,6 @@ using namespace sf;
 
 void rules(RenderWindow & window)
 {
-	//Добавить текстовые правила
 	cout << "[LOG]: Открытие правил" << endl;
 	
 	bool isRules = true;
@@ -14,11 +13,11 @@ void rules(RenderWindow & window)
 	font.loadFromFile("CyrilicOld.ttf");
 	Text txtHeadRules("Правила игры", font, 60);
 	txtHeadRules.setStyle(sf::Text::Bold);
-	txtHeadRules.setPosition(750, 200);
+	txtHeadRules.setPosition(750, 300);
 
-	Text txtRules("Все кидают карты на стол и вскрывают их. \nУ кого оказалась карта старше - забирает все карты со стола. \nПобедитель будет определен, если у остальных не останется карт или \nпройдет достаточное количество раундов.", font, 40);
+	Text txtRules("Все игроки одновременно выкладывают верхнюю карту на стол и вскрывают их. \nУ кого оказалась карта старше - забирает все карты со стола. \nПобедитель будет определен, если у остальных не останется карт или \nпройдет определенное количество раундов.", font, 40);
 	txtRules.setStyle(sf::Text::Bold);
-	txtRules.setPosition(300, 400);
+	txtRules.setPosition(300, 500);
 
 	Texture menuBackground;
 	menuBackground.loadFromFile("images/DarkWall.jpg");
