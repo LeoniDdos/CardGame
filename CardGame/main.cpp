@@ -12,8 +12,9 @@ using namespace sf;
 
 RenderWindow window(VideoMode(1920, 1080), "CardGame", Style::Fullscreen); //Посмотреть настройки max и min размера окна
 
-const int countOfCards = 16; //Количество карт в колоде
-const int countOfPlayers = 2; //Количество игроков
+const int COUNT_OF_CARDS = 16; //Количество карт в колоде
+const int COUNT_OF_PLAYERS = 2; //Количество игроков
+const int COUNT_OF_ROUNDS = 10; //Количество раундов
 
 //Карты на руках
 queue<int> plCards;
@@ -38,11 +39,11 @@ int flagSide = 0;
 bool isFight = false;
 bool expression;
 
-int cardPrice[countOfCards / 4][4];
+int cardPrice[COUNT_OF_CARDS / 4][4];
 
 int roundsCount = 0;
 
-Sprite cardSprites[countOfCards];
+Sprite cardSprites[COUNT_OF_CARDS];
 
 Font font;
 Text txtPlCards("", font, 40);
@@ -56,7 +57,11 @@ Texture tBackOfCard;
 Texture txtrBotCard;
 Texture txtrPlCard;
 
+Texture txtrMove;
+
 Sprite sBackground;
+
+Sprite sMove;
 
 enum PutLocation
 {
@@ -72,14 +77,22 @@ enum Side
 	rightSide
 };
 
-int getGroup(int Array[countOfCards/4][4], int num)
+int getGroup(int Array[COUNT_OF_CARDS / 4][4], int num)
 {
-	for (int i = 0; i < countOfCards / 4; i++)
+	for (int i = 0; i < COUNT_OF_CARDS / 4; i++)
 		for (int j = 0; j < 4; j++)
 			if (Array[i][j] == num)
 				return i;
 
 	return 0;
+}
+
+template <typename T>
+std::string NumberToString(T Number)
+{
+	std::ostringstream ss;
+	ss << Number;
+	return ss.str();
 }
 
 void displayCards()
@@ -108,14 +121,10 @@ void displayCards()
 	}
 }
 
-void drawAndDisplay() {
-	std::ostringstream streamPl;
-	streamPl << plCards.size();
-	txtPlCards.setString("Ваших карт: " + streamPl.str());
-
-	std::ostringstream streamBot;
-	streamBot << botCards.size();
-	txtBotCards.setString("Карт компьютера: " + streamBot.str());
+void drawAndDisplay() 
+{
+	txtPlCards.setString("Ваших карт: " + NumberToString(plCards.size()));
+	txtBotCards.setString("Карт компьютера: " + NumberToString(botCards.size()));
 
 	window.clear();
 
@@ -125,8 +134,16 @@ void drawAndDisplay() {
 
 	window.draw(txtPlCards);
 	window.draw(txtBotCards);
-	if (!isFight) window.draw(txtRound);
+	if (!isFight) 
+	{ 
+		window.draw(txtRound); 
+	}
 	window.draw(txtBattle);
+
+	if ((plCards.size() + botCards.size()) == COUNT_OF_CARDS && !isFight)
+	{
+		window.draw(sMove);
+	}
 
 	window.display();
 }
@@ -181,14 +198,6 @@ void firstGive()
 	}
 }
 
-template <typename T>
-std::string NumberToString(T Number)
-{
-	std::ostringstream ss;
-	ss << Number;
-	return ss.str();
-}
-
 void getTextures() 
 {
 	txtrPlCard.loadFromFile("images/" + NumberToString(plCards.front()) + ".png");
@@ -200,7 +209,7 @@ void getTextures()
 
 void returnBackOfCards() 
 {
-	for (int i = 0; i < countOfCards; i++) 
+	for (int i = 0; i < COUNT_OF_CARDS; i++)
 	{
 		cardSprites[i].setTexture(tBackOfCard);
 	}
@@ -208,7 +217,7 @@ void returnBackOfCards()
 
 void battleCheck()
 {
-	if (!plCards.empty() && !botCards.empty() && roundsCount <= 10)
+	if (!plCards.empty() && !botCards.empty() && roundsCount <= COUNT_OF_ROUNDS)
 	{
 		String nameRound;
 
@@ -220,9 +229,6 @@ void battleCheck()
 
 		roundStorage.push_back(plCards.front());
 		roundStorage.push_back(botCards.front());
-
-		//cardSprites[plCards.front()].setTextureRect(IntRect(20, 320, 206, 306));
-		//cardSprites[botCards.front()].setTextureRect(IntRect(20, 320, 206, 306));
 
 		if (getGroup(cardPrice, plCards.front()) > getGroup(cardPrice, botCards.front()))
 		{
@@ -275,22 +281,23 @@ void battleCheck()
 		txtRound.setString("Раунд: " + nameRound);
 		roundsCount++;
 	}
-	else
+	
+	if (plCards.empty() || botCards.empty() || roundsCount > COUNT_OF_ROUNDS)
 	{
 		isFight = false;
 
-		string NameWinner;
+		string winnerName;
 
 		if (plCards.size() > botCards.size())
-			NameWinner = "Игрок";
+			winnerName = "Игрок";
 		else if (plCards.size() < botCards.size())
-			NameWinner = "Бот";
+			winnerName = "Бот";
 		else if (plCards.size() == botCards.size())
-			NameWinner = "Ничья";
+			winnerName = "Ничья";
 
 		cout << "==============================" << endl;
-		cout << "[LOG]: Выиграл - " << NameWinner << endl;
-		txtBattle.setString("Победитель: " + NameWinner);
+		cout << "[LOG]: Выиграл - " << winnerName << endl;
+		txtBattle.setString("Победитель: " + winnerName);
 	}
 }
 
@@ -324,7 +331,7 @@ void moveCard(PutLocation putLocation, int cardNum, Side side, int endX, int end
 		break;
 	}
 
-	if (expression && roundsCount <=10) 
+	if (expression && roundsCount <= COUNT_OF_ROUNDS)
 	{
 		cardSprites[curCard].move(stepX, stepY);
 	}
@@ -425,11 +432,11 @@ void firstStart()
 	txtBattle.setString("");
 	txtBattle.setPosition(800, 500);
 
-	for (int i = 0; i < countOfCards; i++)
+	for (int i = 0; i < COUNT_OF_CARDS; i++)
 		cardStorage.push_back(i);
 
 	int k = 0;
-	for (int i = 0; i < countOfCards / 4; i++)
+	for (int i = 0; i < COUNT_OF_CARDS / 4; i++)
 		for (int j = 0; j < 4; j++)
 		{
 			cardPrice[i][j] = k;
@@ -471,6 +478,10 @@ int main()
 	sBackground.setTexture(tBackground);
 	tBackOfCard.loadFromFile("images/BackOfCard.png");
 
+	txtrMove.loadFromFile("images/word_move.png");
+	sMove.setTexture(txtrMove);
+	sMove.setPosition(1400, 510);
+
 	firstStart();
 
 	window.clear();
@@ -483,7 +494,12 @@ int main()
 		clock.restart(); //перезагружает время
 		time = time / 1000; //скорость игры
 
+		sMove.setColor(Color::White);
+
 		sf::Event event;
+		
+		if (IntRect(1400, 510, 190, 85).contains(Mouse::getPosition(window))) { sMove.setColor(sf::Color(169, 169, 169, 255)); }
+		
 		while (window.pollEvent(event))
 		{
 			if (event.type == sf::Event::Closed)
@@ -491,11 +507,11 @@ int main()
 
 			if (event.type == Event::MouseButtonPressed)
 			{	
-				if (event.key.code == Mouse::Left && (plCards.size() + botCards.size()) == countOfCards || isFight)
+				if (event.key.code == Mouse::Left && IntRect(1400, 510, 190, 85).contains(Mouse::getPosition(window)) && (plCards.size() + botCards.size()) == COUNT_OF_CARDS || isFight)
 				{
 					isFight = true;
 				}
-				else 
+				else if (event.key.code == Mouse::Left && !((plCards.size() + botCards.size()) == COUNT_OF_CARDS || isFight))
 				{
 					putInHand();
 				}
@@ -507,11 +523,10 @@ int main()
 			}
 		}
 
-		if (!(plCards.size() + botCards.size() == countOfCards) && !isFight)
+		if (!(plCards.size() + botCards.size() == COUNT_OF_CARDS) && !isFight)
 		{
 			startAnim(handLoc);
 		}
-
 		if (isFight)
 		{
 			startAnim(tableLoc);
